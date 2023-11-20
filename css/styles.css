@@ -1,0 +1,35 @@
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    margin: 0;
+    overflow: hidden;
+}
+
+.camera-container {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+}
+
+#video {
+    width: 100%;
+    height: 100%;
+}
+
+#capture {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 10px;
+    font-size: 16px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+#capture:hover {
+    background-color: #45a049;
+}
