@@ -41,8 +41,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function printCollage() {
         // Ajustar el tamaño del lienzo al tamaño de impresión (10 x 15 cm)
-        canvas.width = 10 * 2.54 * window.devicePixelRatio;
-        canvas.height = 15 * 2.54 * window.devicePixelRatio;
+        canvas.width = 10 * 2.54 * window.devicePixelRatio * 2; // Doble ancho para 2x2 collage
+        canvas.height = 15 * 2.54 * window.devicePixelRatio * 2; // Doble alto para 2x2 collage
 
         // Limpiar el lienzo
         ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -62,12 +62,12 @@ document.addEventListener('DOMContentLoaded', function () {
             ctx.drawImage(img, x, y, width, height);
         }
 
-        // Imprimir automáticamente
-        window.print();
+        // Abrir una nueva ventana y escribir directamente el contenido del collage
+        var printWindow = window.open('', '_blank');
+        printWindow.document.open();
+        printWindow.document.write('<html><head><title>Collage de Fotos</title></head>');
+        printWindow.document.write('<body><img src="' + canvas.toDataURL('image/png') + '" style="width: 100%; height: auto;"></body>');
+        printWindow.document.write('</html>');
+        printWindow.document.close();
 
-        // Limpiar las imágenes y reiniciar el texto del botón después de imprimir
-        collageImages = [];
-        currentPhoto = 1;
-        captureButton.textContent = 'Tomar Foto ' + currentPhoto;
-    }
-});
+        //
