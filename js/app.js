@@ -1,73 +1,132 @@
 document.addEventListener('DOMContentLoaded', function () {
-    var video = document.getElementById('video');
-    var canvas = document.getElementById('canvas');
-    var captureButton = document.getElementById('capture');
-    var ctx = canvas.getContext('2d');
-    var collageImages = [];
-    var currentPhoto = 1;
+    const camera = document.getElementById('camera');
+    const captureBtn = document.getElementById('capture-btn');
+    const printBtn = document.getElementById('print-btn');
+    const newPhotosBtn = document.getElementById('new-photos-btn');
+    const previewContainer = document.getElementById('photo-preview');
+
+    let capturedPhotos = [];
+    let imagesLoaded = 0;
 
     navigator.mediaDevices.getUserMedia({ video: true })
-        .then(function (stream) {
-            video.srcObject = stream;
+        .then(stream => {
+            camera.srcObject = stream;
         })
-        .catch(function (error) {
-            console.log('Error al acceder a la cámara: ', error);
+        .catch(error => console.error('Error al acceder a la cámara:', error));
+
+    function capturePhoto() {
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+
+        canvas.width = camera.videoWidth;
+        canvas.height = camera.videoHeight;
+
+        context.drawImage(camera, 0, 0, canvas.width, canvas.height);
+
+        const photoUrl = canvas.toDataURL('image/png');
+        capturedPhotos.push(photoUrl);
+
+        const photoContainer = document.createElement('div');
+        photoContainer.classList.add('photo-container');
+
+        const img = document.createElement('img');
+        img.src = photoUrl;
+        img.classList.add('photo');
+        photoContainer.appendChild(img);
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.innerHTML = 'x';
+        deleteBtn.classList.add('delete-btn');
+        deleteBtn.addEventListener('click', function() {
+            deletePhoto(photoContainer);
         });
+        photoContainer.appendChild(deleteBtn);
 
-    captureButton.addEventListener('click', function () {
-        if (currentPhoto <= 4) {
-            // Ajustar el tamaño del lienzo al tamaño de impresión (10 x 15 cm)
-            canvas.width = 10 * 2.54 * window.devicePixelRatio;
-            canvas.height = 15 * 2.54 * window.devicePixelRatio;
+        previewContainer.appendChild(photoContainer);
+    }
 
-            // Dibujar la imagen desde la cámara en el lienzo
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    function deletePhoto(photoContainer) {
+        const index = Array.from(previewContainer.children).indexOf(photoContainer);
+        capturedPhotos.splice(index, 1);
+        previewContainer.removeChild(photoContainer);
+    }
 
-            // Agregar la imagen al collage
-            collageImages.push(canvas.toDataURL('image/png'));
+    function handleImageLoad() {
+        imagesLoaded++;
 
-            // Actualizar el texto del botón con el número de la foto actual
-            captureButton.textContent = 'Tomar Foto ' + (currentPhoto + 1);
+        if (imagesLoaded === 5) {
+            const collageCanvas = document.createElement('canvas');
+            collageCanvas.width = (camera.videoWidth + 10) * 2; // Ancho total con espacio entre fotos
+            collageCanvas.height = (camera.videoHeight + 10) * 2; // Alto total con espacio entre fotos
+            const collageContext = collageCanvas.getContext('2d');
 
-            // Incrementar el número de la foto actual
-            currentPhoto++;
+            // Cargar las fotos primero
+            for (let i = 0; i < 4; i++) {
+                const img = new Image();
+                img.src = capturedPhotos[i];
+
+                const x = (i % 2) * (camera.videoWidth + 10); // Ancho total con espacio entre fotos
+                const y = Math.floor(i / 2) * (camera.videoHeight + 10); // Alto total con espacio entre fotos
+
+                collageContext.drawImage(img, x, y, camera.videoWidth, camera.videoHeight);
+            }
+
+            // Luego, cargar el marco
+            const marcoImg = new Image();
+            marcoImg.src = 'img/marco.png';
+            marcoImg.onload = function () {
+                collageContext.drawImage(marcoImg, 0, 0, collageCanvas.width, collageCanvas.height);
+
+                const printWindow = window.open('', '_blank');
+                printWindow.document.write('<html><head><title>Fotos</title></head><body>');
+                printWindow.document.write(`<img id="printed-collage" src="${collageCanvas.toDataURL('image/png')}" style="width:100%;height:100%;">`);
+                printWindow.document.write('</body></html>');
+                printWindow.document.close();
+
+                const printedCollage = printWindow.document.getElementById('printed-collage');
+                printedCollage.onload = function () {
+                    printWindow.print();
+                };
+            };
         }
+    }
 
-        if (currentPhoto > 4) {
-            // Al tomar las 4 fotos, imprimir automáticamente
-            printCollage();
+    function printCollage() {
+        const marcoImg = new Image();
+        marcoImg.src = 'img/marco.png';
+        marcoImg.onload = function () {
+            imagesLoaded = 0;
+
+            // Disparar la carga del marco
+            handleImageLoad();
+
+            for (let i = 0; i < 4; i++) {
+                const img = new Image();
+                img.src = capturedPhotos[i];
+                img.onload = handleImageLoad;
+            }
+        };
+    }
+
+    captureBtn.addEventListener('click', function () {
+        if (capturedPhotos.length < 4) {
+            capturePhoto();
+        } else {
+            alert('Ya has capturado 4 fotos');
         }
     });
 
-    function printCollage() {
-        // Ajustar el tamaño del lienzo al tamaño de impresión (10 x 15 cm)
-        canvas.width = 10 * 2.54 * window.devicePixelRatio * 2; // Doble ancho para 2x2 collage
-        canvas.height = 15 * 2.54 * window.devicePixelRatio * 2; // Doble alto para 2x2 collage
-
-        // Limpiar el lienzo
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        // Dibujar cada imagen en el collage
-        for (var i = 0; i < collageImages.length; i++) {
-            var img = new Image();
-            img.src = collageImages[i];
-
-            // Calcular la posición y el tamaño de cada foto en el collage
-            var x = (i % 2) * (canvas.width / 2);
-            var y = Math.floor(i / 2) * (canvas.height / 2);
-            var width = canvas.width / 2;
-            var height = canvas.height / 2;
-
-            // Dibujar la imagen en el lienzo
-            ctx.drawImage(img, x, y, width, height);
+    printBtn.addEventListener('click', function () {
+        if (capturedPhotos.length === 4) {
+            printCollage();
+        } else {
+            alert('Captura 4 fotos antes de imprimir');
         }
+    });
 
-        // Abrir una nueva ventana y escribir directamente el contenido del collage
-        var printWindow = window.open('', '_blank');
-        printWindow.document.open();
-        printWindow.document.write('<html><head><title>Collage de Fotos</title></head>');
-        printWindow.document.write('<body><img src="' + canvas.toDataURL('image/png') + '" style="width: 100%; height: auto;"></body>');
-        printWindow.document.write('</html>');
-        printWindow.document.close();
-
-        //
+    newPhotosBtn.addEventListener('click', function () {
+        capturedPhotos = [];
+        previewContainer.innerHTML = '';
+        newPhotosBtn.style.display = 'none';
+    });
+});
