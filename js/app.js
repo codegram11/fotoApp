@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const deleteBtn = document.createElement('button');
         deleteBtn.innerHTML = 'x';
         deleteBtn.classList.add('delete-btn');
-        deleteBtn.addEventListener('click', function() {
+        deleteBtn.addEventListener('click', function () {
             deletePhoto(photoContainer);
         });
         photoContainer.appendChild(deleteBtn);
@@ -56,37 +56,35 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (imagesLoaded === 5) {
             const collageCanvas = document.createElement('canvas');
-            collageCanvas.width = (camera.videoWidth + 10) * 2; // Ancho total con espacio entre fotos
-            collageCanvas.height = (camera.videoHeight + 10) * 2; // Alto total con espacio entre fotos
+            collageCanvas.width = (camera.videoWidth + 10) * 2;
+            collageCanvas.height = (camera.videoHeight + 10) * 2;
             const collageContext = collageCanvas.getContext('2d');
 
-            // Cargar las fotos primero
             for (let i = 0; i < 4; i++) {
                 const img = new Image();
                 img.src = capturedPhotos[i];
 
-                const x = (i % 2) * (camera.videoWidth + 10); // Ancho total con espacio entre fotos
-                const y = Math.floor(i / 2) * (camera.videoHeight + 10); // Alto total con espacio entre fotos
+                const x = (i % 2) * (camera.videoWidth + 10);
+                const y = Math.floor(i / 2) * (camera.videoHeight + 10);
 
                 collageContext.drawImage(img, x, y, camera.videoWidth, camera.videoHeight);
             }
 
-            // Luego, cargar el marco
             const marcoImg = new Image();
             marcoImg.src = 'img/marco.png';
             marcoImg.onload = function () {
                 collageContext.drawImage(marcoImg, 0, 0, collageCanvas.width, collageCanvas.height);
 
-                const printWindow = window.open('', '_blank');
-                printWindow.document.write('<html><head><title>Fotos</title></head><body>');
-                printWindow.document.write(`<img id="printed-collage" src="${collageCanvas.toDataURL('image/png')}" style="width:100%;height:100%;">`);
-                printWindow.document.write('</body></html>');
-                printWindow.document.close();
-
-                const printedCollage = printWindow.document.getElementById('printed-collage');
-                printedCollage.onload = function () {
-                    printWindow.print();
-                };
+                // Utiliza Print.js para imprimir el collage directamente
+                printJS({
+                    printable: collageCanvas.toDataURL('image/png'),
+                    type: 'image',
+                    base64: true,
+                    onPrintDialogClose: function () {
+                        // Limpia el estado después de la impresión
+                        resetState();
+                    }
+                });
             };
         }
     }
@@ -97,7 +95,6 @@ document.addEventListener('DOMContentLoaded', function () {
         marcoImg.onload = function () {
             imagesLoaded = 0;
 
-            // Disparar la carga del marco
             handleImageLoad();
 
             for (let i = 0; i < 4; i++) {
@@ -106,6 +103,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 img.onload = handleImageLoad;
             }
         };
+    }
+
+    function resetState() {
+        capturedPhotos = [];
+        previewContainer.innerHTML = '';
+        newPhotosBtn.style.display = 'block'; // Muestra el botón "Tomar Nuevas Fotos"
+        printBtn.style.display = 'none'; // Oculta el botón de imprimir
     }
 
     captureBtn.addEventListener('click', function () {
@@ -125,8 +129,6 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     newPhotosBtn.addEventListener('click', function () {
-        capturedPhotos = [];
-        previewContainer.innerHTML = '';
-        newPhotosBtn.style.display = 'none';
+        resetState();
     });
 });
