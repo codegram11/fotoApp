@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const camera = document.getElementById('camera');
     const captureBtn = document.getElementById('capture-btn');
     const printBtn = document.getElementById('print-btn');
+    const deleteAllBtn = document.getElementById('delete-all-btn');
     const previewContainer = document.getElementById('photo-preview');
 
     let capturedPhotos = [];
@@ -142,6 +143,10 @@ document.addEventListener('DOMContentLoaded', function () {
         } else {
             alert('Ya has capturado 4 fotos');
         }
+    });
+
+    deleteAllBtn.addEventListener('click', function () {
+        resetState();
     });
 
     printBtn.addEventListener('click', function () {
