@@ -2,7 +2,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const camera = document.getElementById('camera');
     const captureBtn = document.getElementById('capture-btn');
     const printBtn = document.getElementById('print-btn');
-    const newPhotosBtn = document.getElementById('new-photos-btn');
     const previewContainer = document.getElementById('photo-preview');
 
     let capturedPhotos = [];
@@ -43,12 +42,28 @@ document.addEventListener('DOMContentLoaded', function () {
         photoContainer.appendChild(deleteBtn);
 
         previewContainer.appendChild(photoContainer);
+
+        if (capturedPhotos.length === 4) {
+            enablePrintButton();
+        }
     }
 
     function deletePhoto(photoContainer) {
         const index = Array.from(previewContainer.children).indexOf(photoContainer);
         capturedPhotos.splice(index, 1);
         previewContainer.removeChild(photoContainer);
+
+        if (capturedPhotos.length < 4) {
+            disablePrintButton();
+        }
+    }
+
+    function enablePrintButton() {
+        printBtn.style.display = 'block';
+    }
+
+    function disablePrintButton() {
+        printBtn.style.display = 'none';
     }
 
     function handleImageLoad() {
@@ -80,13 +95,23 @@ document.addEventListener('DOMContentLoaded', function () {
                     printable: collageCanvas.toDataURL('image/png'),
                     type: 'image',
                     base64: true,
+                    paper_size: [10.5, 14.8], // Tamaño de papel en centímetros (A6)
+                    silent: true, // Modo de impresión silenciosa
                     onPrintDialogClose: function () {
                         // Limpia el estado después de la impresión
                         resetState();
+                        // Inicia automáticamente la captura de nuevas fotos
+                        captureNewPhotos();
                     }
                 });
             };
         }
+    }
+
+    function captureNewPhotos() {
+        capturedPhotos = [];
+        imagesLoaded = 0;
+        disablePrintButton();
     }
 
     function printCollage() {
@@ -108,8 +133,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function resetState() {
         capturedPhotos = [];
         previewContainer.innerHTML = '';
-        newPhotosBtn.style.display = 'block'; // Muestra el botón "Tomar Nuevas Fotos"
-        printBtn.style.display = 'none'; // Oculta el botón de imprimir
+        disablePrintButton(); // Oculta el botón de imprimir
     }
 
     captureBtn.addEventListener('click', function () {
@@ -126,9 +150,5 @@ document.addEventListener('DOMContentLoaded', function () {
         } else {
             alert('Captura 4 fotos antes de imprimir');
         }
-    });
-
-    newPhotosBtn.addEventListener('click', function () {
-        resetState();
     });
 });
